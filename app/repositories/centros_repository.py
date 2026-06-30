@@ -33,3 +33,12 @@ class CentrosRepository:
     def list_all(self) -> list[dict[str, Any]]:
         """Return every center document in the collection."""
         return [doc.to_dict() for doc in self._collection.stream()]
+
+    def get_by_ids(self, ids: list[int]) -> list[dict[str, Any]]:
+        """Return center documents matching the given ids (order preserved)."""
+        result: list[dict[str, Any]] = []
+        for centro_id in ids:
+            snapshot = self._collection.document(str(centro_id)).get()
+            if snapshot.exists:
+                result.append(snapshot.to_dict())
+        return result

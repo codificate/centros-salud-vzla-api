@@ -4,6 +4,7 @@ from fastapi import Depends, Request
 from firebase_admin.firestore import Client as FirestoreClient
 
 from app.services.centros_service import CentrosService
+from app.services.usuarios_service import UsuariosService
 
 
 def get_timestamp() -> str:
@@ -21,5 +22,11 @@ def get_centros_service(request: Request) -> CentrosService:
     return request.app.state.centros_service
 
 
+def get_usuarios_service(request: Request) -> UsuariosService:
+    """Return the UsuariosService attached to the application state."""
+    return request.app.state.usuarios_service
+
+
 FirestoreDep = Depends(get_firestore_client)
 CentrosServiceDep = Depends(get_centros_service)
+UsuariosServiceDep = Depends(get_usuarios_service)

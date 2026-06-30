@@ -6,10 +6,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.main import api_router
+from app.api.middleware import VerifyTokenMiddleware
 from app.core.config import settings
 from app.core.firebase import get_firestore, shutdown as firebase_shutdown
 from app.repositories.centros_repository import CentrosRepository
+from app.repositories.usuarios_repository import UsuariosRepository
 from app.services.centros_service import CentrosService
+from app.services.usuarios_service import UsuariosService
 
 
 @asynccontextmanager
@@ -18,9 +21,14 @@ async def lifespan(app: FastAPI):
     client = get_firestore()
     app.state.firestore = client
 
-    service = CentrosService(CentrosRepository(client))
-    app.state.centros_service = service
-    service.seed_if_empty()
+    centros_repository = CentrosRepository(client)
+    centros_service = CentrosService(centros_repository)
+    app.state.centros_service = centros_service
+    centros_service.seed_if_empty()
+
+    app.state.usuarios_service = UsuariosService(
+        UsuariosRepository(client), centros_repository
+    )
 
     try:
         yield
@@ -34,6 +42,8 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+
+app.add_middleware(VerifyTokenMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
