@@ -23,6 +23,13 @@ class UsuariosService:
         """Return True when a user already exists for the given uid."""
         return self._repository.get_by_uid(user_uid) is not None
 
+    def has_centro(self, user_uid: str, centro_id: int) -> bool:
+        """Return True when the user is assigned to the given centro."""
+        doc = self._repository.get_by_uid(user_uid)
+        if doc is None:
+            return False
+        return centro_id in UserEntity.model_validate(doc).centros
+
     def sign_up(
         self, user_uid: str, nombre: str, payload: SignUpRequest
     ) -> UserResponse:

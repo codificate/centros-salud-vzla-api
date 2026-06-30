@@ -4,6 +4,7 @@ from fastapi import Depends, Request
 from firebase_admin.firestore import Client as FirestoreClient
 
 from app.services.centros_service import CentrosService
+from app.services.insumos_service import InsumosService
 from app.services.usuarios_service import UsuariosService
 
 
@@ -27,6 +28,12 @@ def get_usuarios_service(request: Request) -> UsuariosService:
     return request.app.state.usuarios_service
 
 
+def get_insumos_service(request: Request) -> InsumosService:
+    """Return the InsumosService attached to the application state."""
+    return request.app.state.insumos_service
+
+
 FirestoreDep = Depends(get_firestore_client)
 CentrosServiceDep = Depends(get_centros_service)
 UsuariosServiceDep = Depends(get_usuarios_service)
+InsumosServiceDep = Depends(get_insumos_service)

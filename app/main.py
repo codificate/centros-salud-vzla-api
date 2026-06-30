@@ -10,8 +10,10 @@ from app.api.middleware import VerifyTokenMiddleware
 from app.core.config import settings
 from app.core.firebase import get_firestore, shutdown as firebase_shutdown
 from app.repositories.centros_repository import CentrosRepository
+from app.repositories.insumos_repository import InsumosRepository
 from app.repositories.usuarios_repository import UsuariosRepository
 from app.services.centros_service import CentrosService
+from app.services.insumos_service import InsumosService
 from app.services.usuarios_service import UsuariosService
 
 
@@ -29,6 +31,7 @@ async def lifespan(app: FastAPI):
     app.state.usuarios_service = UsuariosService(
         UsuariosRepository(client), centros_repository
     )
+    app.state.insumos_service = InsumosService(InsumosRepository(client))
 
     try:
         yield
