@@ -11,6 +11,12 @@ from app.services.centros_service import CentrosService
 router = APIRouter(prefix="/centros", tags=["centros"])
 
 
-@router.get("/", response_model=list[Centro])
+@router.get(
+    "/",
+    response_model=list[Centro],
+    summary="List health centers",
+    description="Return every health center. Public endpoint, no token required.",
+    response_description="The list of health centers.",
+)
 def list_centros(service: CentrosService = CentrosServiceDep) -> list[Centro]:
     return service.list_centros()

@@ -1,16 +1,19 @@
-from datetime import datetime, timezone
-
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Security
+from fastapi.security import HTTPBearer
 from firebase_admin.firestore import Client as FirestoreClient
 
 from app.services.centros_service import CentrosService
 from app.services.insumos_service import InsumosService
 from app.services.usuarios_service import UsuariosService
 
-
-def get_timestamp() -> str:
-    """Return the current UTC timestamp in ISO 8601 format."""
-    return datetime.now(timezone.utc).isoformat()
+# Bearer scheme for OpenAPI docs only; the actual verification is performed
+# by VerifyTokenMiddleware. auto_error=False avoids a duplicate 403 here.
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="FirebaseBearer",
+    description="Firebase ID token. Send as 'Authorization: Bearer <token>'.",
+)
+BearerSecurity = Security(bearer_scheme)
 
 
 def get_firestore_client(request: Request) -> FirestoreClient:
