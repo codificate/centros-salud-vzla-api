@@ -5,9 +5,11 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.claude
+.idea
 .Python
 .DS_Store
 .env*
 .vercel
-app/config/serviceAccount.json
 **/**/serviceAccount.json
+**/**/centros.json
