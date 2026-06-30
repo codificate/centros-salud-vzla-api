@@ -33,7 +33,16 @@ class UsuariosService:
             centros=[payload.centro_id],
         )
         self._repository.create(entity.model_dump())
+        return self._to_response(nombre, entity)
 
+    def get_user(self, user_uid: str, nombre: str) -> UserResponse | None:
+        """Return the stored user with resolved centers, or None."""
+        doc = self._repository.get_by_uid(user_uid)
+        if doc is None:
+            return None
+        return self._to_response(nombre, UserEntity.model_validate(doc))
+
+    def _to_response(self, nombre: str, entity: UserEntity) -> UserResponse:
         centros = [
             Centro.model_validate(doc)
             for doc in self._centros_repository.get_by_ids(entity.centros)

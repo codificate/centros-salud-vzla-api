@@ -28,3 +28,19 @@ def sign_up(
 
     nombre = request.state.user.get("name", "")
     return service.sign_up(user_uid, nombre, payload)
+
+
+@router.get("/sign-in", response_model=UserResponse)
+def sign_in(
+    request: Request,
+    service: UsuariosService = UsuariosServiceDep,
+) -> UserResponse:
+    user_uid = get_user_uid(request)
+    nombre = request.state.user.get("name", "")
+
+    user = service.get_user(user_uid, nombre)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
