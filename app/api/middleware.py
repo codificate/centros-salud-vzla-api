@@ -2,13 +2,32 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
+from fastapi import status
 from firebase_admin import auth
+from firebase_admin import exceptions as firebase_exceptions
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app.core.config import settings
 from app.core.firebase import get_app
+
+
+class VerificationErrorType(StrEnum):
+    INVALID_TOKEN = "INVALID_TOKEN"
+    EXPIRED_TOKEN = "EXPIRED_TOKEN"
+    REVOKED_TOKEN = "REVOKED_TOKEN"
+    SERVER_ERROR = "SERVER_ERROR"
+
+def _unauthorized(detail: str, error_type: VerificationErrorType) -> JSONResponse:
+    """Build a 401 response with a Bearer challenge."""
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": detail, "error_type": error_type},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def _is_public(request: Request) -> bool:
@@ -38,15 +57,31 @@ class VerifyTokenMiddleware(BaseHTTPMiddleware):
         scheme, _, token = header.partition(" ")
         if scheme.lower() != "bearer" or not token:
             return JSONResponse(
-                status_code=401,
-                content={"detail": "Missing or invalid Authorization header"},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={
+                    "detail": "Missing or invalid Authorization header",
+                    "error_type": VerificationErrorType.INVALID_TOKEN,
+                },
+                headers={"WWW-Authenticate": "Bearer"},
             )
 
         try:
             decoded_token = auth.verify_id_token(token, app=get_app())
-        except Exception:
+        except auth.ExpiredIdTokenError:
+            return _unauthorized("Expired token", VerificationErrorType.EXPIRED_TOKEN)
+        except auth.RevokedIdTokenError:
+            return _unauthorized("Revoked token", VerificationErrorType.REVOKED_TOKEN)
+        except auth.InvalidIdTokenError:
+            return _unauthorized("Invalid token", VerificationErrorType.INVALID_TOKEN)
+        except ValueError:
+            return _unauthorized("Invalid token", VerificationErrorType.INVALID_TOKEN)
+        except firebase_exceptions.FirebaseError:
             return JSONResponse(
-                status_code=401, content={"detail": "Invalid or expired token"}
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={
+                    "detail": "Authentication service unavailable",
+                    "error_type": VerificationErrorType.SERVER_ERROR,
+                },
             )
 
         request.state.user = decoded_token
